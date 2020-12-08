@@ -19,6 +19,9 @@ type sprite struct {
 var player sprite
 var ghosts []*sprite
 var maze []string
+var score int
+var numDots int
+var lives = 1
 
 func loadMaze(file string) error {
 	f, err := os.Open(file)
@@ -41,6 +44,8 @@ func loadMaze(file string) error {
 				player = sprite{row, col}
 			case 'G':
 				ghosts = append(ghosts, &sprite{row, col})
+			case '.':
+				numDots++
 			}
 		}
 	}
@@ -54,6 +59,8 @@ func printScreen() {
 		for _, chr := range line {
 			switch chr {
 			case '#':
+				fallthrough
+			case '.':
 				fmt.Printf("%c", chr)
 			default:
 				fmt.Print(" ")
@@ -72,6 +79,7 @@ func printScreen() {
 
 	// Move cursor outside of maze drawing area
 	simpleansi.MoveCursor(len(maze)+1, 0)
+	fmt.Println("Score:", score, "\tLives:", lives)
 }
 
 func readInput() (string, error) {
@@ -138,6 +146,13 @@ func makeMove(oldRow, oldCol int, dir string) (newRow, newCol int) {
 
 func movePlayer(dir string) {
 	player.row, player.col = makeMove(player.row, player.col, dir)
+	switch maze[player.row][player.col]{
+	case '.':
+		numDots--
+		score++
+		// Remove dot from the maze
+		maze[player.row] = maze[player.row][0:player.col] + " " + maze[player.row][player.col+1:]
+	}
 }
 
 func drawDirection() string {
@@ -209,7 +224,7 @@ func main() {
 		// process collisions
 
 		// check game over
-		if input == "ESC" {
+		if input == "ESC" || numDots == 0 || lives <= 0 {
 			break
 		}
 
